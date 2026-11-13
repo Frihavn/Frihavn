@@ -3,6 +3,12 @@
 
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+  // Resolve repository files from the script location, not the current URL path.
+  // This works on both username.github.io/repo/ project pages and custom domains.
+  const appScript = document.querySelector('script[src*="assets/js/app.js"]');
+  const appScriptURL = appScript ? new URL(appScript.src, document.baseURI) : null;
+  const siteRootURL = appScriptURL ? new URL('../../', appScriptURL) : new URL('./', document.baseURI);
+  const siteURL = (path) => new URL(String(path).replace(/^\//, ''), siteRootURL).href;
   const state = {
     items: [],
     filtered: [],
@@ -14,8 +20,6 @@
     activeIndex: 0,
     heroIndex: 0,
     heroTimer: null,
-    heroHovered: false,
-    heroFocused: false,
     lastFocus: null
   };
 
@@ -57,8 +61,8 @@
 
   async function loadConfig() {
     try {
-      const response = await fetch('data/site-config.json');
-      if (!response.ok) return;
+      const response = await fetch(siteURL('data/site-config.json'), { cache: 'no-cache' });
+      if (!response.ok) throw new Error(`Site settings returned ${response.status}`);
       const config = await response.json();
       const shopName = config.shopName || 'Frihavn';
       document.title = `${shopName} — Map Art Collection`;
@@ -69,24 +73,46 @@
       });
       $$('[data-shop-name]').forEach((node) => { node.textContent = shopName; });
     } catch (error) {
-      console.warn('Using default site settings.', error);
+      // The settings file is optional; catalogue rendering must never depend on it.
+      console.warn('Using default Frihavn site settings.', error);
     }
   }
 
+  function showCatalogueError(error) {
+    console.error('Could not load the Frihavn catalogue:', error);
+    const detail = error?.message ? ` (${escapeHTML(error.message)})` : '';
+    els.grid.hidden = false;
+    els.empty.hidden = true;
+    els.grid.innerHTML = `<div class="loading-state load-error">The collection could not be loaded. Please check that <code>data/maparts.json</code> is committed in the repository and that the Pages deployment has finished${detail}.</div>`;
+  }
+
   async function loadCatalogue() {
+    let items;
     try {
-      const response = await fetch('data/maparts.json');
-      if (!response.ok) throw new Error(`Catalogue returned ${response.status}`);
-      const items = await response.json();
-      if (!Array.isArray(items)) throw new Error('data/maparts.json must contain an array.');
-      state.items = items.filter((item) => item && item.id && item.title && safeImagePath(item.image));
-      state.filtered = [...state.items];
-      renderFilters();
-      renderHero();
-      renderGallery();
+      const response = await fetch(siteURL('data/maparts.json'), { cache: 'no-cache' });
+      if (!response.ok) throw new Error(`Catalogue request returned HTTP ${response.status} at ${response.url}`);
+      items = await response.json();
+      if (!Array.isArray(items)) throw new Error('data/maparts.json must contain a JSON array.');
+      items = items.filter((item) => item && item.id && item.title && safeImagePath(item.image));
+      if (!items.length) throw new Error('No valid map art entries were found. Each entry needs an id, title, and image path beginning with assets/images/.');
     } catch (error) {
-      console.error(error);
-      els.grid.innerHTML = '<div class="loading-state">The collection could not be loaded. Check that <code>data/maparts.json</code> is valid and the site is opened through GitHub Pages or a local web server.</div>';
+      showCatalogueError(error);
+      return;
+    }
+
+    // The catalogue is displayed before optional hero decoration is initialized.
+    // A hero error can no longer replace a successfully loaded gallery with an error.
+    state.items = items;
+    state.filtered = [...items];
+    renderFilters();
+    renderGallery();
+
+    try {
+      renderHero();
+    } catch (error) {
+      console.error('The featured artwork panel could not be initialized:', error);
+      const heroVisual = $('.hero-visual');
+      if (heroVisual) heroVisual.hidden = true;
     }
   }
 
@@ -121,7 +147,7 @@
     return `
       <article class="art-card">
         <button class="card-image-button" type="button" data-open-art="${escapeHTML(item.id)}" aria-label="View ${escapeHTML(item.title)} enlarged">
-          <img class="card-image" src="${escapeHTML(image)}" alt="${escapeHTML(item.title)} map art" loading="lazy">
+          <img class="card-image" src="${escapeHTML(siteURL(image))}" alt="${escapeHTML(item.title)} map art" loading="lazy">
           <span class="card-image-overlay">VIEW ARTWORK <span>↗</span></span>
         </button>
         <div class="card-content">
@@ -161,12 +187,14 @@
     const applySlide = () => {
       const featured = state.featuredItems[index];
       const others = state.items.filter((item) => item.id !== featured.id);
-      heroImage.innerHTML = `<img src="${escapeHTML(safeImagePath(featured.image))}" alt="${escapeHTML(featured.title)} featured map art">`;
-      heroTitle.textContent = featured.title;
-      heroCard.dataset.openArt = featured.id;
-      heroCard.setAttribute('aria-label', `Open ${featured.title} featured map art`);
-      backOne.innerHTML = others[0] ? `<img src="${escapeHTML(safeImagePath(others[0].image))}" alt="">` : '';
-      backTwo.innerHTML = others[1] ? `<img src="${escapeHTML(safeImagePath(others[1].image))}" alt="">` : '';
+      if (heroImage) heroImage.innerHTML = `<img src="${escapeHTML(siteURL(safeImagePath(featured.image)))}" alt="${escapeHTML(featured.title)} featured map art">`;
+      if (heroTitle) heroTitle.textContent = featured.title;
+      if (heroCard) {
+        heroCard.dataset.openArt = featured.id;
+        heroCard.setAttribute('aria-label', `Open ${featured.title} featured map art`);
+      }
+      if (backOne) backOne.innerHTML = others[0] ? `<img src="${escapeHTML(siteURL(safeImagePath(others[0].image)))}" alt="">` : '';
+      if (backTwo) backTwo.innerHTML = others[1] ? `<img src="${escapeHTML(siteURL(safeImagePath(others[1].image)))}" alt="">` : '';
     };
 
     state.heroIndex = index;
@@ -183,36 +211,35 @@
 
   function canRotateHero() {
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    return !document.hidden && !reducedMotion && !state.heroHovered && !state.heroFocused && els.modal.hidden;
+    // Keep the carousel moving while hovered; only pause when the tab is hidden,
+    // reduced motion is requested, or the full-screen artwork viewer is open.
+    return !document.hidden && !reducedMotion && els.modal.hidden;
   }
 
   function renderHero() {
     if (!state.items.length) return;
-    const featuredItems = state.items.filter((item) => Boolean(item.featured));
-    state.featuredItems = featuredItems.length ? featuredItems : state.items;
-    setHeroSlide(0);
-
+    const heroCard = $('[data-open-featured]');
     const heroVisual = $('.hero-visual');
-    heroVisual.addEventListener('mouseenter', () => { state.heroHovered = true; });
-    heroVisual.addEventListener('mouseleave', () => { state.heroHovered = false; });
-    heroVisual.addEventListener('focusin', () => { state.heroFocused = true; });
-    heroVisual.addEventListener('focusout', (event) => {
-      if (!heroVisual.contains(event.relatedTarget)) state.heroFocused = false;
-    });
+    if (!heroCard || !heroVisual || ! $('[data-hero-image]') || ! $('[data-hero-title]')) return;
+
+    state.featuredItems = state.items.filter((item) => Boolean(item.featured));
+    if (!state.featuredItems.length) state.featuredItems = [...state.items];
+    if (state.heroTimer) window.clearInterval(state.heroTimer);
+    state.heroIndex = 0;
+    setHeroSlide(0);
 
     if (state.featuredItems.length > 1) {
       state.heroTimer = window.setInterval(() => {
         if (!canRotateHero()) return;
-        const next = (state.heroIndex + 1) % state.featuredItems.length;
-        setHeroSlide(next, true);
-      }, 5200);
+        setHeroSlide((state.heroIndex + 1) % state.featuredItems.length, true);
+      }, 4200);
     }
   }
 
   function updateModal() {
     const item = state.modalItems[state.activeIndex];
     if (!item) return;
-    els.modalImage.src = safeImagePath(item.image);
+    els.modalImage.src = siteURL(safeImagePath(item.image));
     els.modalImage.alt = `${item.title} map art enlarged`;
     els.modalTitle.textContent = item.title;
     els.modalSource.textContent = item.source || 'Frihavn collection';
@@ -244,7 +271,7 @@
     els.modal.hidden = true;
     els.modal.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('modal-open');
-    state.lastFocus?.focus?.();
+    if (state.lastFocus?.isConnected) state.lastFocus.focus();
   }
 
   function moveModal(direction) {
@@ -261,14 +288,21 @@
     renderGallery();
   });
 
-  els.grid.addEventListener('click', (event) => {
-    const trigger = event.target.closest('[data-open-art]');
-    if (trigger) openModal(trigger.dataset.openArt);
+  // Delegate from the document so clicks on the image, overlay, or card button
+  // all open the same viewer, including cards rendered after filtering.
+  document.addEventListener('click', (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const trigger = target?.closest('[data-open-art], [data-open-featured]');
+    if (!trigger || trigger.closest('#art-modal')) return;
+    const id = trigger.dataset.openArt;
+    if (id) {
+      event.preventDefault();
+      openModal(id);
+    }
   });
 
   els.search.addEventListener('input', () => { state.search = els.search.value; renderGallery(); });
   els.sort.addEventListener('change', () => { state.sort = els.sort.value; renderGallery(); });
-  $('[data-open-featured]').addEventListener('click', (event) => openModal(event.currentTarget.dataset.openArt));
 
   $('#clear-filters').addEventListener('click', () => {
     state.tag = 'all';

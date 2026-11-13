@@ -279,3 +279,88 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+/* Reliable artwork sizing and click targets (shared by gallery and modal). */
+.card-image-button {
+  height: clamp(390px, 34vw, 520px);
+  padding: 20px;
+  isolation: isolate;
+  touch-action: manipulation;
+}
+.card-image-button::before,
+.card-image-overlay { pointer-events: none; }
+.card-image {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  padding: 0;
+  object-fit: contain;
+  object-position: center;
+  pointer-events: none;
+  transform-origin: center;
+}
+.card-image-button:hover .card-image { transform: scale(1.025); }
+
+/* The modal image fills its available canvas before object-fit preserves its shape.
+   This intentionally enlarges small 128px map files instead of displaying them
+   at their original pixel dimensions. */
+.art-modal:not([hidden]) { display: grid; pointer-events: auto; }
+.modal-backdrop { z-index: 0; }
+.modal-panel { z-index: 2; }
+.modal-image-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(18px, 2.4vw, 34px);
+}
+.modal-image-wrap img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  object-position: center;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.modal-navigation { z-index: 3; }
+.modal-close { z-index: 4; }
+
+@media (max-width: 1050px) {
+  .card-image-button { height: clamp(360px, 42vw, 500px); }
+}
+@media (max-width: 720px) {
+  .card-image-button {
+    height: min(118vw, 510px);
+    min-height: 360px;
+    padding: 17px;
+  }
+  .modal-panel {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 96vh;
+    max-height: 96vh;
+    overflow-y: auto;
+  }
+  .modal-image-wrap {
+    flex: 0 0 60vh;
+    height: 60vh;
+    min-height: 60vh;
+    padding: 16px;
+  }
+  .modal-image-wrap img {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+  .modal-navigation { top: calc(60vh - 54px); right: 16px; bottom: auto; }
+}
