@@ -407,3 +407,253 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .art-badge { min-height: 22px; padding: 3px 8px; font-size: 10px; }
   .back-top { padding: 8px 0 8px 8px; }
 }
+
+/* Aspect-ratio-safe gallery frames: let each image keep its natural ratio and
+   scale only until its longest dimension has a small, even inset. */
+.card-image-button {
+  display: grid;
+  place-items: center;
+  height: clamp(380px, 31vw, 460px);
+  padding: 17px;
+  overflow: hidden;
+}
+.card-image {
+  width: auto !important;
+  height: auto !important;
+  max-width: calc(100% - 18px) !important;
+  max-height: calc(100% - 18px) !important;
+  padding: 0 !important;
+  object-fit: contain;
+  object-position: center;
+  transform: none !important;
+}
+.card-image-button:hover .card-image { transform: none !important; }
+
+/* Three-position featured carousel. Only JSON entries with featured:true are
+   rendered in the previous / current / next positions. */
+.hero-visual {
+  min-height: 520px;
+  padding-bottom: 48px;
+}
+.hero-carousel-stage {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  height: 450px;
+  display: grid;
+  place-items: center;
+  transition: opacity .18s ease, transform .18s ease;
+}
+.hero-carousel-stage.is-transitioning {
+  opacity: .16;
+  transform: scale(.985);
+}
+.hero-art-card {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  left: 50%;
+  width: min(350px, 57%);
+  padding: 11px;
+  transform: translate(-50%, -50%) rotate(1deg);
+  cursor: zoom-in;
+}
+.hero-art-card:hover {
+  transform: translate(-50%, -52%) rotate(0);
+}
+.hero-art-image {
+  display: grid;
+  place-items: center;
+  height: 285px;
+  padding: 12px;
+  overflow: hidden;
+}
+.hero-art-image img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: calc(100% - 18px);
+  max-height: calc(100% - 18px);
+  object-fit: contain;
+  object-position: center;
+  image-rendering: pixelated;
+}
+.hero-side-card {
+  position: absolute;
+  z-index: 1;
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  width: min(218px, 34%);
+  height: 304px;
+  padding: 9px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.62);
+  border-radius: 20px;
+  color: var(--ink);
+  background: linear-gradient(145deg, rgba(255,255,255,.96), rgba(222,237,253,.94));
+  box-shadow: 0 20px 48px rgba(1,13,31,.32), 0 0 0 6px rgba(255,255,255,.055);
+  cursor: pointer;
+  transition: transform .25s ease, opacity .18s ease, box-shadow .25s ease;
+}
+.hero-side-card-prev {
+  left: 0;
+  transform: translateY(-50%) rotate(-8deg);
+}
+.hero-side-card-next {
+  right: 0;
+  transform: translateY(-50%) rotate(8deg);
+}
+.hero-side-card-prev:hover { transform: translateY(-53%) rotate(-4deg); }
+.hero-side-card-next:hover { transform: translateY(-53%) rotate(4deg); }
+.hero-side-image {
+  display: grid;
+  flex: 1 1 auto;
+  min-height: 0;
+  place-items: center;
+  padding: 9px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: radial-gradient(circle at 75% 18%, rgba(255,154,71,.18), transparent 45%), #dbeaff;
+}
+.hero-side-image img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: calc(100% - 12px);
+  max-height: calc(100% - 12px);
+  object-fit: contain;
+  object-position: center;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 7px 9px rgba(17,44,76,.2));
+}
+.hero-side-caption {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 52px;
+  justify-content: center;
+  padding: 7px 5px 2px;
+  text-align: left;
+}
+.hero-side-caption strong {
+  overflow: hidden;
+  color: var(--navy);
+  font: 800 12px/1.15 var(--display);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.hero-side-caption small {
+  color: var(--orange-deep);
+  font-size: 11px;
+  font-weight: 800;
+}
+.hero-carousel-controls { bottom: 0; }
+
+@media (max-width: 1050px) {
+  .hero-carousel-stage { height: 415px; }
+  .hero-art-card { width: min(320px, 58%); }
+  .hero-art-image { height: 265px; }
+  .hero-side-card { width: min(185px, 33%); height: 278px; }
+  .card-image-button { height: clamp(370px, 40vw, 450px); }
+}
+@media (max-width: 720px) {
+  .hero-visual { min-height: 425px; padding-bottom: 45px; }
+  .hero-carousel-stage { height: 365px; }
+  .hero-art-card { width: 60%; padding: 8px; }
+  .hero-art-image { height: 235px; padding: 8px; }
+  .hero-art-caption { padding: 12px 5px 6px; }
+  .hero-art-caption strong { font-size: 15px; }
+  .hero-art-price { font-size: 13px; }
+  .hero-side-card { width: 30%; height: 230px; padding: 6px; border-radius: 14px; }
+  .hero-side-image { padding: 5px; }
+  .hero-side-caption { min-height: 42px; padding: 5px 2px 1px; }
+  .hero-side-caption strong { font-size: 10px; }
+  .hero-side-caption small { font-size: 9px; }
+  .hero-carousel-controls { bottom: 0; }
+  .card-image-button {
+    height: clamp(350px, 92vw, 470px);
+    min-height: 350px;
+    padding: 15px;
+  }
+  .card-image {
+    max-width: calc(100% - 16px) !important;
+    max-height: calc(100% - 16px) !important;
+  }
+}
+
+/* The image element fills the available frame, while object-fit:contain scales
+   its actual pixels up to the largest size that preserves the source ratio. */
+.card-image {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+}
+.hero-art-image img,
+.hero-side-image img {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Use a definite inset viewport for every artwork image. An absolutely sized
+   image with object-fit:contain scales up and preserves portrait/landscape
+   ratios reliably inside CSS grid and flex layouts. */
+.card-image-button {
+  position: relative;
+  display: block;
+  padding: 0;
+}
+.card-image {
+  position: absolute !important;
+  inset: 16px;
+  width: calc(100% - 32px) !important;
+  height: calc(100% - 32px) !important;
+  max-width: none !important;
+  max-height: none !important;
+  padding: 0 !important;
+  object-fit: contain;
+  object-position: center;
+  transform: none !important;
+}
+.hero-art-image {
+  position: relative;
+  display: block;
+  height: 285px;
+  padding: 0;
+}
+.hero-art-image img {
+  position: absolute;
+  inset: 12px;
+  width: calc(100% - 24px);
+  height: calc(100% - 24px);
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  object-position: center;
+}
+.hero-side-image {
+  position: relative;
+  display: block;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 0;
+}
+.hero-side-image img {
+  position: absolute;
+  inset: 8px;
+  width: calc(100% - 16px);
+  height: calc(100% - 16px);
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  object-position: center;
+}
+@media (max-width: 720px) {
+  .hero-art-image { height: 235px; }
+  .hero-side-image img { inset: 6px; width: calc(100% - 12px); height: calc(100% - 12px); }
+  .card-image { inset: 14px; width: calc(100% - 28px) !important; height: calc(100% - 28px) !important; }
+}

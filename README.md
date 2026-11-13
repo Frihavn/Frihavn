@@ -1,24 +1,34 @@
 # Frihavn — Map Art Collection
 
-A colourful, responsive GitHub Pages catalogue for Frihavn's in-game map art. It is a static site made with HTML, CSS, JavaScript, and JSON. There is no database, admin page, image-hosting service, or build step.
+A static, responsive GitHub Pages catalogue for Frihavn's in-game map art. It uses HTML, CSS, JavaScript, and a JSON catalogue. There is no database, admin page, online image host, or build step.
 
-## Publish on GitHub Pages
+## Publish / update on GitHub Pages
 
-1. Create a GitHub repository for the site.
-2. Upload the **contents** of this folder to the repository root. Keep `index.html` at the root level.
-3. Open **Settings → Pages** in the repository.
-4. Under **Build and deployment**, choose **Deploy from a branch**.
-5. Select your `main` branch and `/ (root)`, then save.
-6. Open the GitHub Pages URL once deployment finishes.
+1. Keep `index.html` at the repository root.
+2. Copy the updated repository files into your existing GitHub repository. **Merge the files rather than deleting the whole `assets/images/` folder first**, so image files already in your repository are preserved.
+3. Check that every image path in `data/maparts.json` points to a file in `assets/images/` (filenames are case-sensitive on GitHub Pages).
+4. Commit the changes. GitHub Pages will redeploy the static site.
 
-## Add a new map art
+## Current catalogue
 
-Images are stored as normal files in the repository. There are no image URLs, external image hosts, or base64 strings to handle.
+`data/maparts.json` now contains the four pieces supplied for Frihavn:
 
-1. Open the `assets/images/` folder in your GitHub repository.
-2. Choose **Add file → Upload files** and upload your image (PNG, JPG, WEBP, or GIF).
-3. Copy the image's repository path, for example `assets/images/my-new-mapart.png`.
-4. Open `data/maparts.json` and add a new object to the array. Include the title, source, size, price, tags, image path, and a unique ID. Example:
+- Legolas — Lord of the Rings — 1 × 2 maps — 8 diamonds — featured
+- Kirby — Kirby — 1 × 2 maps — 8 diamonds — featured
+- Fox Spirit Shrine — Whispering Woods — 1 × 1 maps — 4 diamonds — not featured; Made to order
+- Koi in Still Water — The Lantern District — 1 × 1 maps — 4 diamonds — featured
+
+The JSON retains the supplied descriptions, sources, status values, image paths, and tags.
+
+**Image files to preserve:** the catalogue references `assets/images/legolasmaprt.png` and `assets/images/kirbymapart.png`. Those two PNG binaries were not present in the working folder available for this update, so they are not included in this ZIP. If they are already in your GitHub repository, leave them in `assets/images/`. Otherwise, upload your original files with those exact filenames before publishing. `fox-spirit-shrine.png` and `koi-in-still-water.png` are included in this package.
+
+## Add or edit a piece
+
+1. Upload the image file into `assets/images/` in the GitHub repository.
+2. Add or edit its object in `data/maparts.json`.
+3. Commit the image and JSON changes together.
+
+Example:
 
 ```json
 {
@@ -27,22 +37,32 @@ Images are stored as normal files in the repository. There are no image URLs, ex
   "source": "Frihavn Workshop",
   "size": "2 × 2 maps",
   "price": "48 diamonds",
-  "tags": ["Fantasy", "Japanese", "Landscapes"],
-  "badges": ["New", "Limited"],
+  "status": "Available",
+  "description": "A moonlit garden scene.",
+  "featured": true,
   "image": "assets/images/moon-garden.png",
-  "featured": false
+  "tags": ["Fantasy", "Japanese", "Landscapes"],
+  "badges": ["New", "Limited"]
 }
 ```
 
-5. Commit the image and JSON changes. GitHub Pages will publish the update automatically after the commit deploys.
+### Featured carousel
 
-The catalogue filter chips are generated automatically from every entry’s `tags` array. These are browse/filter categories. The separate optional `badges` array adds small labels beside the artwork title, such as `New`, `Pre-order`, or `Limited`; badges do not automatically become filter categories. You can use any short badge label and add more than one badge to a piece. The featured artwork runs as an automatic carousel, shows each piece’s title and price, and includes previous/next and dot controls. Clicking a featured piece or any catalogue image opens the full-size viewer. The footer’s Back to Top button scrolls directly to the top of the page. The site resolves JSON and image files from the app script location, so it works from a GitHub Pages project subpath as well as a custom domain. Images are scaled up to fill as much of each display box as their aspect ratio allows, with a visible margin. Add, rename, or remove filter tags in the JSON and the filter list updates on the next GitHub Pages deployment. To replace an artwork image, upload the new file to `assets/images/` and update that entry's `image` value in `data/maparts.json`. To remove an artwork, delete its object from the JSON file (and optionally delete its image file from the repository).
+Set `"featured": true` to include a piece in the featured carousel. Set it to `false` to keep it out of the carousel entirely. The carousel has three positions: previous featured piece on the left, current featured piece in the middle, and next featured piece on the right. It cycles through featured entries only and wraps back to the beginning. The central slide displays the artwork's name and price.
 
-**Important:** The website itself does not contain an editor or collection manager. GitHub Pages is static, so catalogue changes are made directly in the repository and published by a commit.
+### Filter tags and title badges
 
-## Change the Discord link
+- `tags` generates the catalogue filter chips. The filter list is populated automatically from all tags used in the JSON.
+- `badges` adds short labels beside the title, such as `New`, `Pre-order`, or `Limited`. Badges do not become filter chips.
+- `status` is retained as catalogue information. Any status other than `Available` is also shown as a small title badge (for example, `Made to order`).
 
-Edit `data/site-config.json` and replace the example Discord URL with the actual Frihavn invite or contact link:
+### Image sizing
+
+Artwork is displayed with `object-fit: contain` inside a padded image frame. The image scales up to use the largest available dimension while retaining its exact source aspect ratio. Portrait, square, and landscape artwork are not cropped. This works for 1:1, 1:2, 5:3, and other ratios; the source image ratio does not need to be specified separately in the JSON.
+
+## Discord link
+
+Edit `data/site-config.json` and replace the placeholder with Frihavn's invite:
 
 ```json
 {
@@ -59,31 +79,28 @@ Run this from the repository folder:
 python3 -m http.server 8000
 ```
 
-Then open `http://localhost:8000`. The site uses `fetch()` to read its JSON catalogue, so use a local web server instead of opening `index.html` directly from your file manager.
+Open `http://localhost:8000`. Do not open `index.html` directly from the file manager; the catalogue uses `fetch()` to read its JSON file and needs a local web server.
 
-## Repository structure
+## Repository layout
 
 ```text
 frihavn-mapart/
 ├── index.html
 ├── README.md
+├── LICENSE
 ├── .nojekyll
 ├── data/
 │   ├── maparts.json
 │   └── site-config.json
 └── assets/
-    ├── css/
-    │   └── styles.css
-    ├── images/
-    │   ├── frihavn-mark.svg
-    │   └── [your map art image files]
-    └── js/
-        └── app.js
+    ├── css/styles.css
+    ├── js/app.js
+    └── images/
+        ├── frihavn-mark.svg
+        ├── fox-spirit-shrine.png
+        ├── koi-in-still-water.png
+        ├── legolasmaprt.png      # keep/add your original file
+        └── kirbymapart.png       # keep/add your original file
 ```
 
-## Notes
-
-- The included four map art images are demo entries. Replace them and their details with your actual in-game pieces.
-- The Discord URL in `data/site-config.json` is a placeholder until you add your invite.
-- Artwork images are loaded from local paths in the GitHub repository. Keep the image filename and the `image` value in `data/maparts.json` exactly in sync.
-- No checkout or automatic in-game delivery integration is included. The contact button opens the configured Discord link.
+The website is static. Changes are made in the repository and published when GitHub Pages redeploys.

@@ -10,8 +10,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/styles.css?v=20261112-fix2">
-  <script src="assets/js/app.js?v=20261112-fix2" defer></script>
+  <link rel="stylesheet" href="assets/css/styles.css?v=20261113-featured-carousel">
+  <script src="assets/js/app.js?v=20261113-featured-carousel" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#gallery">Skip to collection</a>
@@ -46,22 +46,30 @@
             <a class="hero-link" href="#commissions">Commission a piece <span aria-hidden="true">↗</span></a>
           </div>
         </div>
-        <div class="hero-visual" aria-label="Featured artwork">
+        <div class="hero-visual" aria-label="Featured artwork carousel">
           <div class="hero-glow" aria-hidden="true"></div>
-          <div class="hero-art-back hero-art-back-one" data-hero-back-one aria-hidden="true"></div>
-          <div class="hero-art-back hero-art-back-two" data-hero-back-two aria-hidden="true"></div>
-          <button class="hero-art-card" type="button" data-open-featured aria-label="Open featured map art">
-            <span class="hero-art-image" data-hero-image><span class="art-loading">FRIHAVN</span></span>
-            <span class="hero-art-caption">
-              <span class="hero-art-caption-copy">
-                <small>FEATURED MAP ART</small>
-                <strong data-hero-title>Map art collection</strong>
-                <span class="hero-art-price" data-hero-price></span>
-                <span data-hero-badges></span>
+          <div class="hero-carousel-stage">
+            <button class="hero-side-card hero-side-card-prev" type="button" data-hero-side="prev" aria-label="Show previous featured artwork">
+              <span class="hero-side-image" data-hero-prev-image></span>
+              <span class="hero-side-caption"><strong data-hero-prev-title></strong><small data-hero-prev-price></small></span>
+            </button>
+            <button class="hero-art-card" type="button" data-open-featured aria-label="Open featured map art">
+              <span class="hero-art-image" data-hero-image><span class="art-loading">FRIHAVN</span></span>
+              <span class="hero-art-caption">
+                <span class="hero-art-caption-copy">
+                  <small>FEATURED MAP ART</small>
+                  <strong data-hero-title>Map art collection</strong>
+                  <span class="hero-art-price" data-hero-price></span>
+                  <span data-hero-badges></span>
+                </span>
+                <span class="hero-art-arrow" aria-hidden="true">↗</span>
               </span>
-              <span class="hero-art-arrow" aria-hidden="true">↗</span>
-            </span>
-          </button>
+            </button>
+            <button class="hero-side-card hero-side-card-next" type="button" data-hero-side="next" aria-label="Show next featured artwork">
+              <span class="hero-side-image" data-hero-next-image></span>
+              <span class="hero-side-caption"><strong data-hero-next-title></strong><small data-hero-next-price></small></span>
+            </button>
+          </div>
           <div class="hero-carousel-controls" aria-label="Featured artwork carousel controls">
             <button class="hero-carousel-control" type="button" data-hero-prev aria-label="Previous featured artwork">←</button>
             <div class="hero-carousel-dots" data-hero-dots aria-label="Choose featured artwork"></div>

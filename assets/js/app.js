@@ -65,7 +65,13 @@
   // Pre-order, Limited, or other short labels shown beside an artwork title.
   function itemBadges(item) {
     const source = Array.isArray(item.badges) ? item.badges : [];
-    return [...new Set(source.map((badge) => String(badge).trim()).filter(Boolean))];
+    const badges = source.map((badge) => String(badge).trim()).filter(Boolean);
+    // Show meaningful availability states beside the title, but avoid adding
+    // an unnecessary "Available" label to every ordinary listing.
+    if (item.status && String(item.status).toLowerCase() !== 'available') {
+      badges.push(String(item.status).trim());
+    }
+    return [...new Set(badges.filter(Boolean))];
   }
 
   function badgeTone(label) {
@@ -205,20 +211,45 @@
 
   function setHeroSlide(index, animate = false) {
     if (!state.featuredItems.length) return;
+
     const heroCard = $('[data-open-featured]');
+    const stage = $('.hero-carousel-stage');
     const heroImage = $('[data-hero-image]');
     const heroTitle = $('[data-hero-title]');
     const heroPrice = $('[data-hero-price]');
     const heroBadges = $('[data-hero-badges]');
-    const backOne = $('[data-hero-back-one]');
-    const backTwo = $('[data-hero-back-two]');
     const dots = $('[data-hero-dots]');
-    const normalizedIndex = ((index % state.featuredItems.length) + state.featuredItems.length) % state.featuredItems.length;
+    const total = state.featuredItems.length;
+    const normalizedIndex = ((index % total) + total) % total;
+    const at = (offset) => state.featuredItems[((normalizedIndex + offset) % total + total) % total];
+
+    const paintSide = (side, item, itemIndex) => {
+      const button = $(`[data-hero-side="${side}"]`);
+      if (!button) return;
+      if (!item || total < 2) {
+        button.hidden = true;
+        button.removeAttribute('data-hero-index');
+        return;
+      }
+      button.hidden = false;
+      button.dataset.heroIndex = String(itemIndex);
+      button.setAttribute('aria-label', `Show ${item.title} as the featured artwork`);
+      const imageWrap = side === 'prev' ? $('[data-hero-prev-image]') : $('[data-hero-next-image]');
+      const title = side === 'prev' ? $('[data-hero-prev-title]') : $('[data-hero-next-title]');
+      const price = side === 'prev' ? $('[data-hero-prev-price]') : $('[data-hero-next-price]');
+      if (imageWrap) imageWrap.innerHTML = `<img src="${escapeHTML(siteURL(safeImagePath(item.image)))}" alt="${escapeHTML(item.title)} featured map art" loading="eager">`;
+      if (title) title.textContent = item.title;
+      if (price) price.textContent = item.price || 'Ask for price';
+    };
 
     const applySlide = () => {
       const featured = state.featuredItems[normalizedIndex];
-      const others = state.items.filter((item) => item.id !== featured.id);
-      if (heroImage) heroImage.innerHTML = `<img src="${escapeHTML(siteURL(safeImagePath(featured.image)))}" alt="${escapeHTML(featured.title)} featured map art">`;
+      const previous = at(-1);
+      const next = at(1);
+      const previousIndex = (normalizedIndex - 1 + total) % total;
+      const nextIndex = (normalizedIndex + 1) % total;
+
+      if (heroImage) heroImage.innerHTML = `<img src="${escapeHTML(siteURL(safeImagePath(featured.image)))}" alt="${escapeHTML(featured.title)} featured map art" loading="eager">`;
       if (heroTitle) heroTitle.textContent = featured.title;
       if (heroPrice) heroPrice.textContent = featured.price || 'Ask for price';
       if (heroBadges) heroBadges.innerHTML = badgesMarkup(featured, 'hero-title-badges');
@@ -226,8 +257,13 @@
         heroCard.dataset.openArt = featured.id;
         heroCard.setAttribute('aria-label', `Open ${featured.title} featured map art, ${featured.price || 'price on request'}`);
       }
-      if (backOne) backOne.innerHTML = others[0] ? `<img src="${escapeHTML(siteURL(safeImagePath(others[0].image)))}" alt="">` : '';
-      if (backTwo) backTwo.innerHTML = others[1] ? `<img src="${escapeHTML(siteURL(safeImagePath(others[1].image)))}" alt="">` : '';
+
+      // Both side panels are selected from featuredItems only. The left slot
+      // is always the previous featured entry and the right slot is the next;
+      // modulo indexing makes the carousel a continuous circular sequence.
+      paintSide('prev', previous, previousIndex);
+      paintSide('next', next, nextIndex);
+
       if (dots) {
         $$('[data-hero-dot]', dots).forEach((dot, dotIndex) => {
           const selected = dotIndex === normalizedIndex;
@@ -238,46 +274,50 @@
     };
 
     state.heroIndex = normalizedIndex;
-    if (!animate || !heroCard) {
+    if (!animate || !stage) {
       applySlide();
       return;
     }
     window.clearTimeout(state.heroTransitionTimer);
-    heroCard.classList.add('is-transitioning');
+    stage.classList.add('is-transitioning');
     state.heroTransitionTimer = window.setTimeout(() => {
       applySlide();
-      window.requestAnimationFrame(() => heroCard.classList.remove('is-transitioning'));
-    }, 160);
+      window.requestAnimationFrame(() => stage.classList.remove('is-transitioning'));
+    }, 140);
   }
 
   function chooseHeroSlide(index) {
     setHeroSlide(index, true);
-    // Restart the dwell time after manual navigation so the next automatic
-    // transition gives the newly selected artwork a full viewing interval.
+    // Restart the dwell interval after manual navigation.
     if (state.heroTimer) window.clearInterval(state.heroTimer);
     if (state.featuredItems.length > 1) {
       state.heroTimer = window.setInterval(() => {
         if (!canRotateHero()) return;
-        setHeroSlide((state.heroIndex + 1) % state.featuredItems.length, true);
+        setHeroSlide(state.heroIndex + 1, true);
       }, 4200);
     }
   }
 
   function canRotateHero() {
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    // Keep the carousel moving while hovered; only pause when the tab is hidden,
-    // reduced motion is requested, or the full-screen artwork viewer is open.
     return !document.hidden && !reducedMotion && els.modal.hidden;
   }
 
   function renderHero() {
-    if (!state.items.length) return;
-    const heroCard = $('[data-open-featured]');
     const heroVisual = $('.hero-visual');
-    if (!heroCard || !heroVisual || ! $('[data-hero-image]') || ! $('[data-hero-title]')) return;
+    const heroCard = $('[data-open-featured]');
+    if (!heroVisual || !heroCard || ! $('[data-hero-image]') || ! $('[data-hero-title]')) return;
 
-    state.featuredItems = state.items.filter((item) => Boolean(item.featured));
-    if (!state.featuredItems.length) state.featuredItems = [...state.items];
+    // A piece is featured only when the JSON value is the boolean true.
+    // Non-featured artwork never appears in the central OR side carousel slots.
+    state.featuredItems = state.items.filter((item) => item.featured === true);
+    if (!state.featuredItems.length) {
+      heroVisual.hidden = true;
+      if (state.heroTimer) window.clearInterval(state.heroTimer);
+      return;
+    }
+
+    heroVisual.hidden = false;
     if (state.heroTimer) window.clearInterval(state.heroTimer);
     const dots = $('[data-hero-dots]');
     if (dots) {
@@ -288,13 +328,13 @@
     }
     const controls = $('.hero-carousel-controls');
     if (controls) controls.hidden = state.featuredItems.length < 2;
+
     state.heroIndex = 0;
     setHeroSlide(0);
-
     if (state.featuredItems.length > 1) {
       state.heroTimer = window.setInterval(() => {
         if (!canRotateHero()) return;
-        setHeroSlide((state.heroIndex + 1) % state.featuredItems.length, true);
+        setHeroSlide(state.heroIndex + 1, true);
       }, 4200);
     }
   }
@@ -383,6 +423,10 @@
   // Featured-art carousel controls supplement the automatic rotation.
   $('[data-hero-prev]')?.addEventListener('click', () => chooseHeroSlide(state.heroIndex - 1));
   $('[data-hero-next]')?.addEventListener('click', () => chooseHeroSlide(state.heroIndex + 1));
+  $$('[data-hero-side]').forEach((button) => button.addEventListener('click', () => {
+    const targetIndex = Number(button.dataset.heroIndex);
+    if (Number.isInteger(targetIndex)) chooseHeroSlide(targetIndex);
+  }));
   $('[data-hero-dots]')?.addEventListener('click', (event) => {
     const dot = event.target.closest('[data-hero-dot]');
     if (dot) chooseHeroSlide(Number(dot.dataset.heroDot));
