@@ -1,117 +1,88 @@
-# Mapart Atelier — GitHub Pages Gallery
+# Frihavn — Map Art Collection
 
-A dark, responsive storefront-style gallery for showcasing in-game map art. It is a static site: plain HTML, CSS, JavaScript, and JSON, with no build step, database, external image host, or JavaScript framework required.
+A colourful, responsive GitHub Pages catalogue for Frihavn's in-game map art. It is a static site made with HTML, CSS, JavaScript, and JSON. There is no database, admin page, image-hosting service, or build step.
 
-## What is included
+## Publish on GitHub Pages
 
-- **Public gallery (`index.html`)** — responsive landing page, hero feature, catalogue cards, search, category filters, sorting, artwork detail modal, commissions section, order/contact information, and FAQ.
-- **Catalogue manager (`admin.html`)** — add, edit, and delete artwork entries; upload an image directly from your computer; preview it; and export the updated catalogue as `maparts.json`.
-- **Embedded images** — each image is stored inside `data/maparts.json` as a base64 data URI. No image URL or external image hosting is used.
-- **Editable settings (`data/site-config.json`)** — shop name and Discord/contact link.
-- **Starter artwork** — four original pixel-art examples are included so the layout is populated on first launch. Replace them with your own in-game screenshots/mapart.
-
-## Publish with GitHub Pages
-
-1. Create a new repository on GitHub.
-2. Upload the **contents** of this folder to the repository root. `index.html` should be at the top level, not inside another nested folder.
-3. Open the repository's **Settings → Pages**.
+1. Create a GitHub repository for the site.
+2. Upload the **contents** of this folder to the repository root. Keep `index.html` at the root level.
+3. Open **Settings → Pages** in the repository.
 4. Under **Build and deployment**, choose **Deploy from a branch**.
-5. Select your default branch (usually `main`) and the `/ (root)` folder, then save.
-6. After GitHub Pages publishes the site, open the provided URL. The gallery is the home page; the manager is at `/admin.html`.
+5. Select your `main` branch and `/ (root)`, then save.
+6. Open the GitHub Pages URL once deployment finishes.
 
-No compilation or package installation is needed.
+## Add a new map art
 
-## Add or update map art
+Images are stored as normal files in the repository. There are no image URLs, external image hosts, or base64 strings to handle.
 
-### Using the catalogue manager
-
-1. Open your published site and go to **Manage collection**, or visit `https://YOUR-USERNAME.github.io/YOUR-REPOSITORY/admin.html`.
-2. Fill in the title, source, size, price, category, and availability.
-3. Choose the image file from your computer. PNG, JPG, WEBP, and GIF are supported (up to 5 MB per image).
-4. Preview the image and save the entry. Use **Edit** or **Delete** beside an existing catalogue entry to change it.
-5. When finished, click **Download maparts.json**.
-6. In your GitHub repository, replace `data/maparts.json` with the downloaded file and commit/push the change. GitHub Pages will publish the new catalogue after the repository update.
-
-The manager can also import an existing `maparts.json`, which is useful when you have a local copy to continue editing.
-
-### Why does it download a JSON file instead of saving automatically?
-
-GitHub Pages serves static files. A page running on GitHub Pages cannot write changes back into the repository, so the manager prepares the updated catalogue in your browser and downloads it for you to commit. This keeps the site simple and avoids requiring a server, database, GitHub personal access token, or separate image host.
-
-## Add artwork by editing the JSON directly
-
-Each artwork is one object in the array in `data/maparts.json`:
+1. Open the `assets/images/` folder in your GitHub repository.
+2. Choose **Add file → Upload files** and upload your image (PNG, JPG, WEBP, or GIF).
+3. Copy the image's repository path, for example `assets/images/my-new-mapart.png`.
+4. Open `data/maparts.json` and add a new object to the array. Include the title, source, size, price, category, image path, and a unique ID. Example:
 
 ```json
 {
-  "id": "moonlit-sakura",
-  "title": "Moonlit Sakura",
-  "source": "The Lantern District",
+  "id": "moon-garden",
+  "title": "Moon Garden",
+  "source": "Frihavn Workshop",
   "size": "2 × 2 maps",
   "price": "48 diamonds",
-  "category": "Landscapes",
-  "status": "Available",
-  "description": "A quiet cherry tree beneath a pale moon.",
-  "imageData": "data:image/png;base64,PASTE_BASE64_IMAGE_DATA_HERE",
-  "featured": true
+  "category": "Fantasy",
+  "image": "assets/images/moon-garden.png",
+  "featured": false
 }
 ```
 
-The easiest option is the catalogue manager: it converts the selected image into the `imageData` value automatically. If you edit the JSON by hand, use a base64 **data URI** (not a normal web URL). Keep the JSON valid and use a unique `id` for every piece. Set `featured` to `true` on at most one item if you want it to appear in the hero feature.
+5. Commit the image and JSON changes. GitHub Pages will publish the update automatically after the commit deploys.
 
-### Image size tips
+To replace an artwork image, upload the new file to `assets/images/` and update that entry's `image` value in `data/maparts.json`. To remove an artwork, delete its object from the JSON file (and optionally delete its image file from the repository).
 
-Base64 adds roughly one-third to an image's file size. For a fast-loading GitHub Pages site, use optimized PNG or WEBP files and keep each image reasonably small. Since the gallery enlarges the original file in its preview, use a version with enough detail for viewers to inspect.
+**Important:** The website itself does not contain an editor or collection manager. GitHub Pages is static, so catalogue changes are made directly in the repository and published by a commit.
 
-## Change the site name and contact link
+## Change the Discord link
 
-Edit `data/site-config.json`:
+Edit `data/site-config.json` and replace the example Discord URL with the actual Frihavn invite or contact link:
 
 ```json
 {
-  "shopName": "Mapart Atelier",
-  "serverName": "Your server",
-  "discordUrl": "https://discord.com",
-  "currencyLabel": "diamonds",
-  "contactLabel": "Contact us on Discord"
+  "shopName": "Frihavn",
+  "discordUrl": "https://discord.gg/YOUR-INVITE"
 }
 ```
 
-Replace the example name and `discordUrl` with your own. The sample Discord URL is only a placeholder; use your actual invite or contact link.
+## Preview locally
 
-## Preview on your computer
-
-Because the gallery fetches JSON files, open it through a local web server instead of double-clicking `index.html`:
+Run this from the repository folder:
 
 ```bash
-# Run this from the repository folder
 python3 -m http.server 8000
 ```
 
-Then open `http://localhost:8000` for the gallery or `http://localhost:8000/admin.html` for the manager.
+Then open `http://localhost:8000`. The site uses `fetch()` to read its JSON catalogue, so use a local web server instead of opening `index.html` directly from your file manager.
 
 ## Repository structure
 
 ```text
-mapart-gallery/
+frihavn-mapart/
 ├── index.html
-├── admin.html
+├── README.md
+├── .nojekyll
 ├── data/
 │   ├── maparts.json
 │   └── site-config.json
-├── assets/
-│   ├── css/
-│   │   ├── styles.css
-│   │   └── admin.css
-│   └── js/
-│       ├── app.js
-│       └── admin.js
-├── .nojekyll
-└── README.md
+└── assets/
+    ├── css/
+    │   └── styles.css
+    ├── images/
+    │   ├── frihavn-mark.svg
+    │   └── [your map art image files]
+    └── js/
+        └── app.js
 ```
 
 ## Notes
 
-- All artwork images in the starter catalogue are original demo pixel art, not screenshots from your server.
-- There is no checkout or automatic in-game delivery integration. The contact links are intended to start a conversation where you can confirm availability and arrange the trade.
-- The catalogue manager is not password-protected. It does not directly edit your GitHub repository, but anyone who can open the page can create and download their own catalogue draft. Keep repository write access and commits under your control.
+- The included four map art images are demo entries. Replace them and their details with your actual in-game pieces.
+- The Discord URL in `data/site-config.json` is a placeholder until you add your invite.
+- Artwork images are loaded from local paths in the GitHub repository. Keep the image filename and the `image` value in `data/maparts.json` exactly in sync.
+- No checkout or automatic in-game delivery integration is included. The contact button opens the configured Discord link.
