@@ -1,0 +1,4 @@
+# Normally used files with private info
+.env
+.log
+.env.local

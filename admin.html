@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101017">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Catalogue Manager — Mapart Atelier</title>
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/admin.css">
+  <script src="assets/js/admin.js" defer></script>
+</head>
+<body class="admin-page">
+  <div class="announcement-bar"><span class="announcement-dot" aria-hidden="true"></span><span>CATALOGUE MANAGEMENT</span><span class="announcement-divider">/</span><span class="announcement-small">LOCAL EDITOR · NO ACCOUNT REQUIRED</span></div>
+  <header class="site-header">
+    <div class="header-inner shell">
+      <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none"><path d="M6 29 15 10l7 14 5-8 8 13H6Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 32h22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="28.5" cy="9.5" r="3" fill="currentColor"/></svg></span><span class="brand-copy"><strong>Mapart Atelier</strong><small>THE IN-GAME ART HOUSE</small></span></a>
+      <a class="subtle-link" href="index.html">← Return to gallery</a>
+    </div>
+  </header>
+
+  <main class="admin-main shell">
+    <div class="admin-title-row">
+      <div><div class="eyebrow"><span class="eyebrow-line"></span> YOUR COLLECTION, YOUR WAY</div><h1>Catalogue <em>manager.</em></h1><p class="section-description">Add artwork, update details, and keep the gallery looking fresh. Images are embedded directly into your catalogue file.</p></div>
+      <div class="admin-count"><strong id="item-count">04</strong><span>ARTWORKS<br>IN CATALOGUE</span></div>
+    </div>
+
+    <div class="admin-notice"><span class="notice-icon">✳</span><div><strong>How saving works</strong><p>This editor runs in your browser. Changes stay here until you download the updated <code>maparts.json</code> file and replace the one in your GitHub repository. GitHub Pages cannot write files back to your repository automatically.</p></div></div>
+
+    <div class="admin-layout">
+      <section class="admin-panel editor-panel">
+        <div class="admin-panel-heading"><div><span class="panel-kicker">01 / ARTWORK DETAILS</span><h2 id="form-heading">Add a new piece</h2></div><button class="admin-text-button" type="button" id="reset-form">＋ New entry</button></div>
+        <form id="art-form">
+          <input type="hidden" id="editing-id">
+          <div class="form-grid">
+            <label class="field field-wide"><span>Artwork title <b>*</b></span><input type="text" id="title" maxlength="80" placeholder="e.g. Moonlit Sakura" required></label>
+            <label class="field"><span>Source / where it's from <b>*</b></span><input type="text" id="source" maxlength="80" placeholder="e.g. The Lantern District" required></label>
+            <label class="field"><span>Size <b>*</b></span><input type="text" id="size" maxlength="40" placeholder="e.g. 2 × 2 maps" required></label>
+            <label class="field"><span>Price <b>*</b></span><input type="text" id="price" maxlength="40" placeholder="e.g. 48 diamonds" required></label>
+            <label class="field"><span>Category</span><input type="text" id="category" maxlength="35" placeholder="e.g. Landscapes" list="category-options"><datalist id="category-options"><option value="Landscapes"><option value="Fantasy"><option value="Nature"><option value="Characters"><option value="Pixel art"><option value="Other"></datalist></label>
+            <label class="field"><span>Availability</span><select id="status"><option>Available</option><option>Made to order</option><option>Pre-order</option><option>Sold</option><option>Coming soon</option></select></label>
+            <label class="field field-wide"><span>Short description</span><textarea id="description" rows="3" maxlength="240" placeholder="A short note about the artwork, its style, or inspiration."></textarea></label>
+          </div>
+          <div class="image-upload-area">
+            <div class="upload-copy"><span class="panel-kicker">ARTWORK IMAGE <b>*</b></span><strong>Upload the image file itself</strong><p>PNG, JPG, WEBP or GIF · Up to 5 MB. The image will be saved inside the JSON file as base64 data.</p><label class="upload-button" for="image-file">Choose image <span>↑</span></label><input type="file" id="image-file" accept="image/png,image/jpeg,image/webp,image/gif"></div>
+            <div class="upload-preview" id="upload-preview"><span>IMAGE<br>PREVIEW</span></div>
+          </div>
+          <label class="featured-toggle"><input type="checkbox" id="featured"><span class="fake-check"></span><span><strong>Feature this piece</strong><small>Featured artwork appears in the gallery hero.</small></span></label>
+          <div class="form-actions"><button class="button button-primary" type="submit" id="save-entry">Add to catalogue <span>＋</span></button><button class="button button-outline" type="button" id="cancel-edit">Cancel</button></div>
+          <p class="admin-status" id="form-status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <aside class="admin-panel entries-panel">
+        <div class="admin-panel-heading"><div><span class="panel-kicker">02 / CURRENT ENTRIES</span><h2>Your catalogue</h2></div><span class="entry-count-pill" id="entry-count-pill">04</span></div>
+        <div class="entries-list" id="entries-list"><div class="admin-empty">Loading catalogue…</div></div>
+        <div class="entries-actions"><button type="button" class="button button-primary export-button" id="export-json">Download maparts.json <span>↓</span></button><label class="button button-outline import-button" for="import-json">Import JSON <span>↑</span></label><input type="file" id="import-json" accept="application/json,.json"></div>
+        <p class="export-note">Download after making your changes, then replace <code>data/maparts.json</code> in your repository and push the update.</p>
+      </aside>
+    </div>
+
+    <div class="admin-footer-note"><span>✳</span> YOUR ORIGINAL IMAGE FILES ARE NOT UPLOADED TO A THIRD-PARTY HOST.</div>
+  </main>
+  <footer class="site-footer admin-footer"><div class="shell footer-bottom"><span>MAPART ATELIER · CATALOGUE MANAGER</span><a href="index.html">BACK TO GALLERY ↗</a></div></footer>
+</body>
+</html>
