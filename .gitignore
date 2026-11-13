@@ -2,3 +2,7 @@
 .env
 .log
 .env.local
+
+
+#npx serve 
+# load on localhost

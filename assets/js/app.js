@@ -14,6 +14,8 @@
     filtered: [],
     featuredItems: [],
     modalItems: [],
+    modalPhotos: [],
+    activePhotoIndex: 0,
     tag: 'all',
     search: '',
     sort: 'featured',
@@ -37,7 +39,14 @@
     modalSource: $('#modal-source'),
     modalSize: $('#modal-size'),
     modalPrice: $('#modal-price'),
-    modalBadges: $('#modal-badges')
+    modalBadges: $('#modal-badges'),
+    photoGallery: $('.modal-photo-footer'),
+    photoLabel: $('#modal-photo-label'),
+    photoDescription: $('#modal-photo-description'),
+    photoCount: $('#modal-photo-count'),
+    photoThumbnails: $('#modal-photo-thumbnails'),
+    photoPrev: $('#modal-photo-prev'),
+    photoNext: $('#modal-photo-next')
   };
 
   const escapeHTML = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
@@ -94,7 +103,7 @@
       if (!response.ok) throw new Error(`Site settings returned ${response.status}`);
       const config = await response.json();
       const shopName = config.shopName || 'Frihavn';
-      document.title = `${shopName} — Map Art Collection`;
+      document.title = `${shopName} — Mapart Collection`;
       $$('[data-discord-link]').forEach((link) => {
         if (typeof config.discordUrl === 'string' && /^https:\/\//i.test(config.discordUrl)) {
           link.href = config.discordUrl;
@@ -123,7 +132,7 @@
       items = await response.json();
       if (!Array.isArray(items)) throw new Error('data/maparts.json must contain a JSON array.');
       items = items.filter((item) => item && item.id && item.title && safeImagePath(item.image));
-      if (!items.length) throw new Error('No valid map art entries were found. Each entry needs an id, title, and image path beginning with assets/images/.');
+      if (!items.length) throw new Error('No valid mapart entries were found. Each entry needs an id, title, and image path beginning with assets/images/.');
     } catch (error) {
       showCatalogueError(error);
       return;
@@ -176,7 +185,7 @@
     return `
       <article class="art-card">
         <button class="card-image-button" type="button" data-open-art="${escapeHTML(item.id)}" aria-label="View ${escapeHTML(item.title)} enlarged">
-          <img class="card-image" src="${escapeHTML(siteURL(image))}" alt="${escapeHTML(item.title)} map art" loading="lazy">
+          <img class="card-image" src="${escapeHTML(siteURL(image))}" alt="${escapeHTML(item.title)} mapart" loading="lazy">
           <span class="card-image-overlay">VIEW ARTWORK <span>↗</span></span>
         </button>
         <div class="card-content">
@@ -237,7 +246,7 @@
       const imageWrap = side === 'prev' ? $('[data-hero-prev-image]') : $('[data-hero-next-image]');
       const title = side === 'prev' ? $('[data-hero-prev-title]') : $('[data-hero-next-title]');
       const price = side === 'prev' ? $('[data-hero-prev-price]') : $('[data-hero-next-price]');
-      if (imageWrap) imageWrap.innerHTML = `<img src="${escapeHTML(siteURL(safeImagePath(item.image)))}" alt="${escapeHTML(item.title)} featured map art" loading="eager">`;
+      if (imageWrap) imageWrap.innerHTML = `<img src="${escapeHTML(siteURL(safeImagePath(item.image)))}" alt="${escapeHTML(item.title)} featured mapart" loading="eager">`;
       if (title) title.textContent = item.title;
       if (price) price.textContent = item.price || 'Ask for price';
     };
@@ -249,13 +258,13 @@
       const previousIndex = (normalizedIndex - 1 + total) % total;
       const nextIndex = (normalizedIndex + 1) % total;
 
-      if (heroImage) heroImage.innerHTML = `<img src="${escapeHTML(siteURL(safeImagePath(featured.image)))}" alt="${escapeHTML(featured.title)} featured map art" loading="eager">`;
+      if (heroImage) heroImage.innerHTML = `<img src="${escapeHTML(siteURL(safeImagePath(featured.image)))}" alt="${escapeHTML(featured.title)} featured mapart" loading="eager">`;
       if (heroTitle) heroTitle.textContent = featured.title;
       if (heroPrice) heroPrice.textContent = featured.price || 'Ask for price';
       if (heroBadges) heroBadges.innerHTML = badgesMarkup(featured, 'hero-title-badges');
       if (heroCard) {
         heroCard.dataset.openArt = featured.id;
-        heroCard.setAttribute('aria-label', `Open ${featured.title} featured map art, ${featured.price || 'price on request'}`);
+        heroCard.setAttribute('aria-label', `Open ${featured.title} featured mapart, ${featured.price || 'price on request'}`);
       }
 
       // Both side panels are selected from featuredItems only. The left slot
@@ -339,11 +348,76 @@
     }
   }
 
+  // The digital render in `image` is always photo 1. Any optional `photos`
+  // entries are additional in-game views of this same mapart.
+  function getModalPhotos(item) {
+    const photos = [{
+      src: safeImagePath(item.image),
+      label: 'Digital render',
+      description: item.description || 'Original digital mapart',
+      isDigitalRender: true
+    }];
+    const extraPhotos = Array.isArray(item.photos) ? item.photos : [];
+    extraPhotos.forEach((photo, index) => {
+      const source = typeof photo === 'string' ? photo : (photo?.image || photo?.src);
+      const src = safeImagePath(source);
+      if (!src) return;
+      const label = typeof photo === 'object' && photo?.label
+        ? String(photo.label).trim()
+        : `In-game photo ${index + 1}`;
+      const description = typeof photo === 'object' && (photo?.caption || photo?.description)
+        ? String(photo.caption || photo.description).trim()
+        : 'In-game view';
+      photos.push({
+        src,
+        label: label || `In-game photo ${index + 1}`,
+        description,
+        isDigitalRender: false
+      });
+    });
+    return photos;
+  }
+
+  function renderModalPhoto() {
+    const item = state.modalItems[state.activeIndex];
+    const photo = state.modalPhotos[state.activePhotoIndex];
+    if (!item || !photo) return;
+
+    els.modalImage.src = siteURL(photo.src);
+    els.modalImage.alt = `${item.title} — ${photo.label}`;
+    els.modalImage.classList.toggle('is-digital-render', photo.isDigitalRender);
+    els.photoLabel.textContent = photo.label;
+    els.photoDescription.textContent = photo.description;
+    els.photoCount.textContent = `${state.activePhotoIndex + 1} / ${state.modalPhotos.length}`;
+
+    const hasExtraPhotos = state.modalPhotos.length > 1;
+    els.photoGallery.hidden = !hasExtraPhotos;
+    els.photoPrev.hidden = !hasExtraPhotos;
+    els.photoNext.hidden = !hasExtraPhotos;
+    els.photoCount.hidden = !hasExtraPhotos;
+    if (!hasExtraPhotos) {
+      els.photoThumbnails.innerHTML = '';
+      return;
+    }
+
+    els.photoPrev.disabled = false;
+    els.photoNext.disabled = false;
+    els.photoThumbnails.innerHTML = state.modalPhotos.map((entry, index) => `
+      <button class="modal-photo-thumb${index === state.activePhotoIndex ? ' active' : ''}" type="button"
+        data-modal-photo-index="${index}" aria-label="Show ${escapeHTML(entry.label)}"
+        aria-pressed="${index === state.activePhotoIndex}">
+        <img src="${escapeHTML(siteURL(entry.src))}" alt="" loading="lazy">
+      </button>`).join('');
+
+    const activeThumb = $('[data-modal-photo-index].active', els.photoThumbnails);
+    activeThumb?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }
+
   function updateModal() {
     const item = state.modalItems[state.activeIndex];
     if (!item) return;
-    els.modalImage.src = siteURL(safeImagePath(item.image));
-    els.modalImage.alt = `${item.title} map art enlarged`;
+    state.modalPhotos = getModalPhotos(item);
+    state.activePhotoIndex = 0;
     els.modalTitle.textContent = item.title;
     els.modalSource.textContent = item.source || 'Frihavn collection';
     els.modalSize.textContent = item.size || 'Not listed';
@@ -351,6 +425,19 @@
     if (els.modalBadges) els.modalBadges.innerHTML = badgesMarkup(item, 'modal-title-badges');
     $('#modal-prev').disabled = state.modalItems.length < 2;
     $('#modal-next').disabled = state.modalItems.length < 2;
+    renderModalPhoto();
+  }
+
+  function moveModalPhoto(direction) {
+    if (state.modalPhotos.length < 2) return;
+    state.activePhotoIndex = (state.activePhotoIndex + direction + state.modalPhotos.length) % state.modalPhotos.length;
+    renderModalPhoto();
+  }
+
+  function selectModalPhoto(index) {
+    if (!Number.isInteger(index) || index < 0 || index >= state.modalPhotos.length) return;
+    state.activePhotoIndex = index;
+    renderModalPhoto();
   }
 
   function openModal(id) {
@@ -419,6 +506,13 @@
   $$('[data-close-modal]').forEach((button) => button.addEventListener('click', closeModal));
   $('#modal-prev').addEventListener('click', () => moveModal(-1));
   $('#modal-next').addEventListener('click', () => moveModal(1));
+  els.photoPrev.addEventListener('click', () => moveModalPhoto(-1));
+  els.photoNext.addEventListener('click', () => moveModalPhoto(1));
+  els.photoThumbnails.addEventListener('click', (event) => {
+    const trigger = event.target.closest('[data-modal-photo-index]');
+    if (!trigger) return;
+    selectModalPhoto(Number(trigger.dataset.modalPhotoIndex));
+  });
 
   // Featured-art carousel controls supplement the automatic rotation.
   $('[data-hero-prev]')?.addEventListener('click', () => chooseHeroSlide(state.heroIndex - 1));

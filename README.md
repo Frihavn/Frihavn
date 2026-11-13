@@ -1,68 +1,78 @@
-# Frihavn — Map Art Collection
+# Frihavn — Mapart Collection
 
-A static, responsive GitHub Pages catalogue for Frihavn's in-game map art. It uses HTML, CSS, JavaScript, and a JSON catalogue. There is no database, admin page, online image host, or build step.
+A static GitHub Pages catalogue for Frihavn. This build uses the exact `index.html` structure supplied for the site, keeps the existing blue-and-orange styles, and adds a separate per-mapart photo browser inside the magnified viewer.
 
-## Publish / update on GitHub Pages
+## Publish the update
 
 1. Keep `index.html` at the repository root.
-2. Copy the updated repository files into your existing GitHub repository. **Merge the files rather than deleting the whole `assets/images/` folder first**, so image files already in your repository are preserved.
-3. Check that every image path in `data/maparts.json` points to a file in `assets/images/` (filenames are case-sensitive on GitHub Pages).
+2. Merge the updated `index.html`, `assets/css/styles.css`, `assets/js/app.js`, and `data/maparts.json` into your existing repository.
+3. Keep your existing artwork images in `assets/images/`—especially `legolasmaprt.png` and `kirbymapart.png`.
 4. Commit the changes. GitHub Pages will redeploy the static site.
 
-## Current catalogue
+Do not delete or replace your existing `assets/images/` folder when applying this update. The source artwork files are your own repository assets and should remain in place.
 
-`data/maparts.json` now contains the four pieces supplied for Frihavn:
+## Add extra photos to a mapart
 
-- Legolas — Lord of the Rings — 1 × 2 maps — 8 diamonds — featured
-- Kirby — Kirby — 1 × 2 maps — 8 diamonds — featured
-- Fox Spirit Shrine — Whispering Woods — 1 × 1 maps — 4 diamonds — not featured; Made to order
-- Koi in Still Water — The Lantern District — 1 × 1 maps — 4 diamonds — featured
-
-The JSON retains the supplied descriptions, sources, status values, image paths, and tags.
-
-**Image files to preserve:** the catalogue references `assets/images/legolasmaprt.png` and `assets/images/kirbymapart.png`. Those two PNG binaries were not present in the working folder available for this update, so they are not included in this ZIP. If they are already in your GitHub repository, leave them in `assets/images/`. Otherwise, upload your original files with those exact filenames before publishing. `fox-spirit-shrine.png` and `koi-in-still-water.png` are included in this package.
-
-## Add or edit a piece
-
-1. Upload the image file into `assets/images/` in the GitHub repository.
-2. Add or edit its object in `data/maparts.json`.
-3. Commit the image and JSON changes together.
-
-Example:
+The `image` field remains the original digital render and always appears first in the enlarged viewer. Add one or more entries to the optional `photos` array for in-game photographs:
 
 ```json
 {
-  "id": "moon-garden",
-  "title": "Moon Garden",
-  "source": "Frihavn Workshop",
-  "size": "2 × 2 maps",
-  "price": "48 diamonds",
+  "id": "legolas",
+  "title": "Legolas",
+  "source": "Lord of the Rings",
+  "size": "1 × 2 maps",
+  "price": "8 diamonds",
   "status": "Available",
-  "description": "A moonlit garden scene.",
+  "description": "Legolas aiming a bow",
   "featured": true,
-  "image": "assets/images/moon-garden.png",
-  "tags": ["Fantasy", "Japanese", "Landscapes"],
-  "badges": ["New", "Limited"]
+  "image": "assets/images/legolasmaprt.png",
+  "tags": ["Portrait"],
+  "photos": [
+    {
+      "image": "assets/images/legolas-ingame-front.png",
+      "label": "Front view",
+      "caption": "The finished mapart displayed in-game."
+    },
+    {
+      "image": "assets/images/legolas-ingame-wall.png",
+      "label": "Wall display",
+      "caption": "A wider view of the display wall."
+    }
+  ]
 }
 ```
 
-### Featured carousel
+### Uploading the image files
 
-Set `"featured": true` to include a piece in the featured carousel. Set it to `false` to keep it out of the carousel entirely. The carousel has three positions: previous featured piece on the left, current featured piece in the middle, and next featured piece on the right. It cycles through featured entries only and wraps back to the beginning. The central slide displays the artwork's name and price.
+1. Open `assets/images/` in your GitHub repository.
+2. Choose **Add file → Upload files**.
+3. Upload the in-game screenshots, using the exact filenames referenced in `photos`.
+4. Commit the new images and the JSON change.
 
-### Filter tags and title badges
+Filenames are case-sensitive. Use local paths beginning with `assets/images/`; external image URLs are not used.
 
-- `tags` generates the catalogue filter chips. The filter list is populated automatically from all tags used in the JSON.
-- `badges` adds short labels beside the title, such as `New`, `Pre-order`, or `Limited`. Badges do not become filter chips.
-- `status` is retained as catalogue information. Any status other than `Available` is also shown as a small title badge (for example, `Made to order`).
+### How the viewer works
 
-### Image sizing
+- The digital render from `image` is always photo 1.
+- Entries in `photos` follow in the order listed in JSON.
+- The left/right photo arrows and thumbnail strip change photos of the current mapart only.
+- The separate **Browse Other Mapart** controls change to another catalogue piece.
+- When a visitor switches mapart, its viewer resets to that piece's digital render.
+- The photo controls and strip are hidden when the selected piece has no extra photos.
+- Digital mapart renders use crisp pixel scaling; in-game screenshots display normally.
 
-Artwork is displayed with `object-fit: contain` inside a padded image frame. The image scales up to use the largest available dimension while retaining its exact source aspect ratio. Portrait, square, and landscape artwork are not cropped. This works for 1:1, 1:2, 5:3, and other ratios; the source image ratio does not need to be specified separately in the JSON.
+The `photos` property is optional. Existing JSON entries without it continue to work.
+
+## Catalogue fields
+
+- `tags`: populates the catalogue filter chips automatically.
+- `badges`: short display labels beside the title, such as `New`, `Pre-order`, or `Limited`.
+- `featured: true`: includes the piece in the featured carousel. Only featured entries appear in its center and side positions.
+- `photos`: optional array of extra in-game photographs, as described above.
 
 ## Discord link
 
-Edit `data/site-config.json` and replace the placeholder with Frihavn's invite:
+Edit `data/site-config.json` and replace the placeholder invite URL:
 
 ```json
 {
@@ -73,15 +83,15 @@ Edit `data/site-config.json` and replace the placeholder with Frihavn's invite:
 
 ## Preview locally
 
-Run this from the repository folder:
+From the repository directory, run:
 
 ```bash
 python3 -m http.server 8000
 ```
 
-Open `http://localhost:8000`. Do not open `index.html` directly from the file manager; the catalogue uses `fetch()` to read its JSON file and needs a local web server.
+Then open `http://localhost:8000`. Do not open `index.html` directly from the file manager; the catalogue loads JSON with `fetch()` and needs a local web server.
 
-## Repository layout
+## Repository structure
 
 ```text
 frihavn-mapart/
@@ -95,12 +105,5 @@ frihavn-mapart/
 └── assets/
     ├── css/styles.css
     ├── js/app.js
-    └── images/
-        ├── frihavn-mark.svg
-        ├── fox-spirit-shrine.png
-        ├── koi-in-still-water.png
-        ├── legolasmaprt.png      # keep/add your original file
-        └── kirbymapart.png       # keep/add your original file
+    └── images/  # keep your existing mapart and in-game photo files here
 ```
-
-The website is static. Changes are made in the repository and published when GitHub Pages redeploys.
