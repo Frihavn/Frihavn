@@ -20,6 +20,7 @@
     activeIndex: 0,
     heroIndex: 0,
     heroTimer: null,
+    heroTransitionTimer: null,
     lastFocus: null
   };
 
@@ -35,7 +36,8 @@
     modalTitle: $('#modal-title'),
     modalSource: $('#modal-source'),
     modalSize: $('#modal-size'),
-    modalPrice: $('#modal-price')
+    modalPrice: $('#modal-price'),
+    modalBadges: $('#modal-badges')
   };
 
   const escapeHTML = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
@@ -57,6 +59,27 @@
   function itemTags(item) {
     const source = Array.isArray(item.tags) ? item.tags : (item.category ? [item.category] : []);
     return [...new Set(source.map((tag) => String(tag).trim()).filter(Boolean))];
+  }
+
+  // Display badges are separate from browse/filter tags. Use these for New,
+  // Pre-order, Limited, or other short labels shown beside an artwork title.
+  function itemBadges(item) {
+    const source = Array.isArray(item.badges) ? item.badges : [];
+    return [...new Set(source.map((badge) => String(badge).trim()).filter(Boolean))];
+  }
+
+  function badgeTone(label) {
+    const value = String(label).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    if (/pre-?order/.test(value)) return 'badge-preorder';
+    if (value === 'new' || value.startsWith('new-')) return 'badge-new';
+    if (value.includes('limited')) return 'badge-limited';
+    return 'badge-custom';
+  }
+
+  function badgesMarkup(item, extraClass = '') {
+    const badges = itemBadges(item);
+    if (!badges.length) return '';
+    return `<span class="title-badges ${extraClass}">${badges.map((badge) => `<span class="art-badge ${badgeTone(badge)}">${escapeHTML(badge)}</span>`).join('')}</span>`;
   }
 
   async function loadConfig() {
@@ -152,7 +175,10 @@
         </button>
         <div class="card-content">
           <p class="card-source">${escapeHTML(item.source || 'Frihavn collection')}</p>
-          <h3>${escapeHTML(item.title)}</h3>
+          <div class="card-title-row">
+            <h3>${escapeHTML(item.title)}</h3>
+            ${badgesMarkup(item)}
+          </div>
           <dl class="card-meta">
             <div><dt>SIZE</dt><dd>${escapeHTML(item.size || 'Not listed')}</dd></div>
             <div><dt>PRICE</dt><dd class="price-value">${escapeHTML(item.price || 'Ask for price')}</dd></div>
@@ -182,31 +208,59 @@
     const heroCard = $('[data-open-featured]');
     const heroImage = $('[data-hero-image]');
     const heroTitle = $('[data-hero-title]');
+    const heroPrice = $('[data-hero-price]');
+    const heroBadges = $('[data-hero-badges]');
     const backOne = $('[data-hero-back-one]');
     const backTwo = $('[data-hero-back-two]');
+    const dots = $('[data-hero-dots]');
+    const normalizedIndex = ((index % state.featuredItems.length) + state.featuredItems.length) % state.featuredItems.length;
+
     const applySlide = () => {
-      const featured = state.featuredItems[index];
+      const featured = state.featuredItems[normalizedIndex];
       const others = state.items.filter((item) => item.id !== featured.id);
       if (heroImage) heroImage.innerHTML = `<img src="${escapeHTML(siteURL(safeImagePath(featured.image)))}" alt="${escapeHTML(featured.title)} featured map art">`;
       if (heroTitle) heroTitle.textContent = featured.title;
+      if (heroPrice) heroPrice.textContent = featured.price || 'Ask for price';
+      if (heroBadges) heroBadges.innerHTML = badgesMarkup(featured, 'hero-title-badges');
       if (heroCard) {
         heroCard.dataset.openArt = featured.id;
-        heroCard.setAttribute('aria-label', `Open ${featured.title} featured map art`);
+        heroCard.setAttribute('aria-label', `Open ${featured.title} featured map art, ${featured.price || 'price on request'}`);
       }
       if (backOne) backOne.innerHTML = others[0] ? `<img src="${escapeHTML(siteURL(safeImagePath(others[0].image)))}" alt="">` : '';
       if (backTwo) backTwo.innerHTML = others[1] ? `<img src="${escapeHTML(siteURL(safeImagePath(others[1].image)))}" alt="">` : '';
+      if (dots) {
+        $$('[data-hero-dot]', dots).forEach((dot, dotIndex) => {
+          const selected = dotIndex === normalizedIndex;
+          dot.classList.toggle('active', selected);
+          dot.setAttribute('aria-pressed', String(selected));
+        });
+      }
     };
 
-    state.heroIndex = index;
-    if (!animate) {
+    state.heroIndex = normalizedIndex;
+    if (!animate || !heroCard) {
       applySlide();
       return;
     }
+    window.clearTimeout(state.heroTransitionTimer);
     heroCard.classList.add('is-transitioning');
-    window.setTimeout(() => {
+    state.heroTransitionTimer = window.setTimeout(() => {
       applySlide();
       window.requestAnimationFrame(() => heroCard.classList.remove('is-transitioning'));
-    }, 220);
+    }, 160);
+  }
+
+  function chooseHeroSlide(index) {
+    setHeroSlide(index, true);
+    // Restart the dwell time after manual navigation so the next automatic
+    // transition gives the newly selected artwork a full viewing interval.
+    if (state.heroTimer) window.clearInterval(state.heroTimer);
+    if (state.featuredItems.length > 1) {
+      state.heroTimer = window.setInterval(() => {
+        if (!canRotateHero()) return;
+        setHeroSlide((state.heroIndex + 1) % state.featuredItems.length, true);
+      }, 4200);
+    }
   }
 
   function canRotateHero() {
@@ -225,6 +279,15 @@
     state.featuredItems = state.items.filter((item) => Boolean(item.featured));
     if (!state.featuredItems.length) state.featuredItems = [...state.items];
     if (state.heroTimer) window.clearInterval(state.heroTimer);
+    const dots = $('[data-hero-dots]');
+    if (dots) {
+      dots.innerHTML = state.featuredItems.map((item, index) =>
+        `<button class="hero-carousel-dot${index === 0 ? ' active' : ''}" type="button" data-hero-dot="${index}" aria-label="Show ${escapeHTML(item.title)}" aria-pressed="${index === 0}"></button>`
+      ).join('');
+      dots.hidden = state.featuredItems.length < 2;
+    }
+    const controls = $('.hero-carousel-controls');
+    if (controls) controls.hidden = state.featuredItems.length < 2;
     state.heroIndex = 0;
     setHeroSlide(0);
 
@@ -245,6 +308,7 @@
     els.modalSource.textContent = item.source || 'Frihavn collection';
     els.modalSize.textContent = item.size || 'Not listed';
     els.modalPrice.textContent = item.price || 'Ask for price';
+    if (els.modalBadges) els.modalBadges.innerHTML = badgesMarkup(item, 'modal-title-badges');
     $('#modal-prev').disabled = state.modalItems.length < 2;
     $('#modal-next').disabled = state.modalItems.length < 2;
   }
@@ -315,6 +379,21 @@
   $$('[data-close-modal]').forEach((button) => button.addEventListener('click', closeModal));
   $('#modal-prev').addEventListener('click', () => moveModal(-1));
   $('#modal-next').addEventListener('click', () => moveModal(1));
+
+  // Featured-art carousel controls supplement the automatic rotation.
+  $('[data-hero-prev]')?.addEventListener('click', () => chooseHeroSlide(state.heroIndex - 1));
+  $('[data-hero-next]')?.addEventListener('click', () => chooseHeroSlide(state.heroIndex + 1));
+  $('[data-hero-dots]')?.addEventListener('click', (event) => {
+    const dot = event.target.closest('[data-hero-dot]');
+    if (dot) chooseHeroSlide(Number(dot.dataset.heroDot));
+  });
+
+  // Use a real scroll command rather than an in-page anchor. This always goes
+  // to document position zero, regardless of whichever section was visited last.
+  $('#back-to-top')?.addEventListener('click', () => {
+    const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, left: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+  });
 
   document.addEventListener('keydown', (event) => {
     if (els.modal.hidden) return;

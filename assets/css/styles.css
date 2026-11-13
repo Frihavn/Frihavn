@@ -364,3 +364,46 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   }
   .modal-navigation { top: calc(60vh - 54px); right: 16px; bottom: auto; }
 }
+
+
+/* Featured map-art carousel controls and title/price presentation. */
+.hero-visual { padding-bottom: 48px; }
+.hero-art-caption { align-items: flex-end; gap: 12px; }
+.hero-art-caption-copy { display: block; min-width: 0; flex: 1; }
+.hero-art-caption strong { max-width: 100%; }
+.hero-art-price { display: block; margin-top: 5px; color: var(--orange-deep); font-size: 15px; font-weight: 800; }
+.hero-art-caption .title-badges { margin-top: 8px; }
+.hero-carousel-controls { position: absolute; z-index: 5; left: 50%; bottom: 0; display: flex; align-items: center; justify-content: center; gap: 13px; transform: translateX(-50%); }
+.hero-carousel-control { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid rgba(255,255,255,.35); border-radius: 50%; color: white; background: rgba(5,22,44,.66); font-size: 20px; line-height: 1; cursor: pointer; transition: background .2s ease, transform .2s ease; }
+.hero-carousel-control:hover { background: var(--orange-deep); transform: translateY(-2px); }
+.hero-carousel-dots { display: flex; align-items: center; justify-content: center; gap: 7px; }
+.hero-carousel-dot { width: 8px; height: 8px; padding: 0; border: 0; border-radius: 99px; background: rgba(255,255,255,.48); cursor: pointer; transition: width .2s ease, background .2s ease; }
+.hero-carousel-dot.active { width: 24px; background: var(--orange); }
+
+/* Small title-side labels (independent of the catalogue filter tags). */
+.card-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 11px; margin-top: 1px; }
+.card-title-row h3 { margin: 0; }
+.title-badges { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.art-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 3px 9px; border: 1px solid transparent; border-radius: 999px; font-size: 11px; line-height: 1.15; font-weight: 900; letter-spacing: .055em; text-transform: uppercase; white-space: nowrap; }
+.badge-new { color: #14549a; background: #dceeff; border-color: #b9dcff; }
+.badge-preorder { color: #93400d; background: #ffead8; border-color: #ffd0a9; }
+.badge-limited { color: #5d388e; background: #eee4ff; border-color: #d8c4ff; }
+.badge-custom { color: #3e536d; background: #e7edf5; border-color: #d1dce9; }
+.hero-title-badges .art-badge { min-height: 20px; padding: 2px 7px; font-size: 9px; }
+.modal-title-row { display: flex; align-items: center; flex-wrap: wrap; gap: 9px 12px; }
+.modal-title-row h2 { margin-bottom: 0; }
+.modal-title-badges .art-badge { font-size: 10px; }
+
+/* This is a button, not a fragment link: it always scrolls to document top. */
+.back-top { padding: 8px 0 8px 12px; border: 0; color: #9bb6d4; background: transparent; font-family: inherit; font-size: 12px; font-weight: 800; letter-spacing: .12em; cursor: pointer; }
+.back-top:hover { color: var(--orange); }
+@media (max-width: 720px) {
+  .hero-visual { min-height: 430px; padding-bottom: 43px; }
+  .hero-art-caption { padding-top: 13px; }
+  .hero-art-caption strong { font-size: 17px; }
+  .hero-art-price { font-size: 14px; }
+  .hero-carousel-controls { bottom: 0; }
+  .card-title-row { gap: 7px 9px; }
+  .art-badge { min-height: 22px; padding: 3px 8px; font-size: 10px; }
+  .back-top { padding: 8px 0 8px 8px; }
+}

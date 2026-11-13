@@ -28,6 +28,7 @@ Images are stored as normal files in the repository. There are no image URLs, ex
   "size": "2 × 2 maps",
   "price": "48 diamonds",
   "tags": ["Fantasy", "Japanese", "Landscapes"],
+  "badges": ["New", "Limited"],
   "image": "assets/images/moon-garden.png",
   "featured": false
 }
@@ -35,7 +36,7 @@ Images are stored as normal files in the repository. There are no image URLs, ex
 
 5. Commit the image and JSON changes. GitHub Pages will publish the update automatically after the commit deploys.
 
-The catalogue filter chips are generated automatically from every entry’s `tags` array. The site resolves JSON and image files from the app script location, so it works from a GitHub Pages project subpath as well as a custom domain. The featured artwork rotates automatically (every 4.2 seconds while the tab is visible), and clicking any catalogue image opens the full-size viewer. Images are scaled up to fill as much of each display box as their aspect ratio allows, with a visible margin. Add, rename, or remove tags in the JSON and the filter list updates on the next GitHub Pages deployment. A piece can have more than one tag. To replace an artwork image, upload the new file to `assets/images/` and update that entry's `image` value in `data/maparts.json`. To remove an artwork, delete its object from the JSON file (and optionally delete its image file from the repository).
+The catalogue filter chips are generated automatically from every entry’s `tags` array. These are browse/filter categories. The separate optional `badges` array adds small labels beside the artwork title, such as `New`, `Pre-order`, or `Limited`; badges do not automatically become filter categories. You can use any short badge label and add more than one badge to a piece. The featured artwork runs as an automatic carousel, shows each piece’s title and price, and includes previous/next and dot controls. Clicking a featured piece or any catalogue image opens the full-size viewer. The footer’s Back to Top button scrolls directly to the top of the page. The site resolves JSON and image files from the app script location, so it works from a GitHub Pages project subpath as well as a custom domain. Images are scaled up to fill as much of each display box as their aspect ratio allows, with a visible margin. Add, rename, or remove filter tags in the JSON and the filter list updates on the next GitHub Pages deployment. To replace an artwork image, upload the new file to `assets/images/` and update that entry's `image` value in `data/maparts.json`. To remove an artwork, delete its object from the JSON file (and optionally delete its image file from the repository).
 
 **Important:** The website itself does not contain an editor or collection manager. GitHub Pages is static, so catalogue changes are made directly in the repository and published by a commit.
 
