@@ -6,11 +6,16 @@
   const state = {
     items: [],
     filtered: [],
+    featuredItems: [],
     modalItems: [],
-    category: 'all',
+    tag: 'all',
     search: '',
     sort: 'featured',
     activeIndex: 0,
+    heroIndex: 0,
+    heroTimer: null,
+    heroHovered: false,
+    heroFocused: false,
     lastFocus: null
   };
 
@@ -26,8 +31,7 @@
     modalTitle: $('#modal-title'),
     modalSource: $('#modal-source'),
     modalSize: $('#modal-size'),
-    modalPrice: $('#modal-price'),
-    modalIndex: $('#modal-index')
+    modalPrice: $('#modal-price')
   };
 
   const escapeHTML = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
@@ -45,6 +49,11 @@
     const match = String(price ?? '').replace(/,/g, '').match(/\d+(?:\.\d+)?/);
     return match ? Number(match[0]) : Number.POSITIVE_INFINITY;
   };
+
+  function itemTags(item) {
+    const source = Array.isArray(item.tags) ? item.tags : (item.category ? [item.category] : []);
+    return [...new Set(source.map((tag) => String(tag).trim()).filter(Boolean))];
+  }
 
   async function loadConfig() {
     try {
@@ -81,14 +90,20 @@
     }
   }
 
-  const categories = () => [...new Set(state.items.map((item) => String(item.category || 'Other').trim()).filter(Boolean))]
-    .sort((a, b) => a.localeCompare(b));
+  function allTags() {
+    const unique = new Map();
+    state.items.forEach((item) => itemTags(item).forEach((tag) => {
+      const key = tag.toLocaleLowerCase();
+      if (!unique.has(key)) unique.set(key, tag);
+    }));
+    return [...unique.values()].sort((a, b) => a.localeCompare(b));
+  }
 
   function renderFilters() {
-    const labels = [{ name: 'All pieces', value: 'all' }, ...categories().map((name) => ({ name, value: name }))];
+    const labels = [{ name: 'All pieces', value: 'all' }, ...allTags().map((name) => ({ name, value: name }))];
     els.filters.innerHTML = labels.map(({ name, value }) => {
-      const selected = state.category === value;
-      return `<button class="filter-chip ${selected ? 'selected' : ''}" type="button" data-category="${escapeHTML(value)}" aria-pressed="${selected}">${escapeHTML(name)}</button>`;
+      const selected = state.tag.toLocaleLowerCase() === value.toLocaleLowerCase();
+      return `<button class="filter-chip ${selected ? 'selected' : ''}" type="button" data-tag="${escapeHTML(value)}" aria-pressed="${selected}">${escapeHTML(name)}</button>`;
     }).join('');
   }
 
@@ -122,10 +137,12 @@
 
   function renderGallery() {
     const query = state.search.trim().toLowerCase();
+    const activeTag = state.tag.toLowerCase();
     const matches = state.items.filter((item) => {
-      const categoryMatch = state.category === 'all' || (item.category || 'Other') === state.category;
-      const searchable = [item.title, item.source, item.size, item.price, item.category].join(' ').toLowerCase();
-      return categoryMatch && (!query || searchable.includes(query));
+      const itemTagList = itemTags(item);
+      const tagMatch = state.tag === 'all' || itemTagList.some((tag) => tag.toLowerCase() === activeTag);
+      const searchable = [item.title, item.source, item.size, item.price, ...itemTagList].join(' ').toLowerCase();
+      return tagMatch && (!query || searchable.includes(query));
     });
     state.filtered = sortedItems(matches);
     els.grid.innerHTML = state.filtered.map(cardMarkup).join('');
@@ -134,20 +151,62 @@
     els.count.textContent = `Showing ${state.filtered.length} ${state.filtered.length === 1 ? 'piece' : 'pieces'}`;
   }
 
-  function renderHero() {
-    if (!state.items.length) return;
-    const featured = state.items.find((item) => item.featured) || state.items[0];
-    const others = state.items.filter((item) => item.id !== featured.id);
+  function setHeroSlide(index, animate = false) {
+    if (!state.featuredItems.length) return;
+    const heroCard = $('[data-open-featured]');
     const heroImage = $('[data-hero-image]');
-    heroImage.innerHTML = `<img src="${escapeHTML(safeImagePath(featured.image))}" alt="${escapeHTML(featured.title)} featured map art">`;
-    $('[data-hero-title]').textContent = featured.title;
-    $('[data-hero-total]').textContent = String(state.items.length).padStart(2, '0');
-    const heroButton = $('[data-open-featured]');
-    heroButton.dataset.openArt = featured.id;
+    const heroTitle = $('[data-hero-title]');
     const backOne = $('[data-hero-back-one]');
     const backTwo = $('[data-hero-back-two]');
-    if (others[0]) backOne.innerHTML = `<img src="${escapeHTML(safeImagePath(others[0].image))}" alt="">`;
-    if (others[1]) backTwo.innerHTML = `<img src="${escapeHTML(safeImagePath(others[1].image))}" alt="">`;
+    const applySlide = () => {
+      const featured = state.featuredItems[index];
+      const others = state.items.filter((item) => item.id !== featured.id);
+      heroImage.innerHTML = `<img src="${escapeHTML(safeImagePath(featured.image))}" alt="${escapeHTML(featured.title)} featured map art">`;
+      heroTitle.textContent = featured.title;
+      heroCard.dataset.openArt = featured.id;
+      heroCard.setAttribute('aria-label', `Open ${featured.title} featured map art`);
+      backOne.innerHTML = others[0] ? `<img src="${escapeHTML(safeImagePath(others[0].image))}" alt="">` : '';
+      backTwo.innerHTML = others[1] ? `<img src="${escapeHTML(safeImagePath(others[1].image))}" alt="">` : '';
+    };
+
+    state.heroIndex = index;
+    if (!animate) {
+      applySlide();
+      return;
+    }
+    heroCard.classList.add('is-transitioning');
+    window.setTimeout(() => {
+      applySlide();
+      window.requestAnimationFrame(() => heroCard.classList.remove('is-transitioning'));
+    }, 220);
+  }
+
+  function canRotateHero() {
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    return !document.hidden && !reducedMotion && !state.heroHovered && !state.heroFocused && els.modal.hidden;
+  }
+
+  function renderHero() {
+    if (!state.items.length) return;
+    const featuredItems = state.items.filter((item) => Boolean(item.featured));
+    state.featuredItems = featuredItems.length ? featuredItems : state.items;
+    setHeroSlide(0);
+
+    const heroVisual = $('.hero-visual');
+    heroVisual.addEventListener('mouseenter', () => { state.heroHovered = true; });
+    heroVisual.addEventListener('mouseleave', () => { state.heroHovered = false; });
+    heroVisual.addEventListener('focusin', () => { state.heroFocused = true; });
+    heroVisual.addEventListener('focusout', (event) => {
+      if (!heroVisual.contains(event.relatedTarget)) state.heroFocused = false;
+    });
+
+    if (state.featuredItems.length > 1) {
+      state.heroTimer = window.setInterval(() => {
+        if (!canRotateHero()) return;
+        const next = (state.heroIndex + 1) % state.featuredItems.length;
+        setHeroSlide(next, true);
+      }, 5200);
+    }
   }
 
   function updateModal() {
@@ -159,7 +218,6 @@
     els.modalSource.textContent = item.source || 'Frihavn collection';
     els.modalSize.textContent = item.size || 'Not listed';
     els.modalPrice.textContent = item.price || 'Ask for price';
-    els.modalIndex.textContent = `${String(state.activeIndex + 1).padStart(2, '0')} / ${String(state.filtered.length).padStart(2, '0')}`;
     $('#modal-prev').disabled = state.modalItems.length < 2;
     $('#modal-next').disabled = state.modalItems.length < 2;
   }
@@ -196,9 +254,9 @@
   }
 
   els.filters.addEventListener('click', (event) => {
-    const trigger = event.target.closest('[data-category]');
+    const trigger = event.target.closest('[data-tag]');
     if (!trigger) return;
-    state.category = trigger.dataset.category;
+    state.tag = trigger.dataset.tag;
     renderFilters();
     renderGallery();
   });
@@ -213,7 +271,7 @@
   $('[data-open-featured]').addEventListener('click', (event) => openModal(event.currentTarget.dataset.openArt));
 
   $('#clear-filters').addEventListener('click', () => {
-    state.category = 'all';
+    state.tag = 'all';
     state.search = '';
     els.search.value = '';
     renderFilters();

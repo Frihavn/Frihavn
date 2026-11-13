@@ -5,11 +5,15 @@
     "source": "The Lantern District",
     "size": "2 × 2 maps",
     "price": "48 diamonds",
-    "category": "Landscapes",
     "status": "Available",
     "description": "A quiet cherry tree beneath a pale moon, built in soft rose and midnight tones.",
     "featured": true,
-    "image": "assets/images/moonlit-sakura.png"
+    "image": "assets/images/moonlit-sakura.png",
+    "tags": [
+      "Landscapes",
+      "Nature",
+      "Japanese"
+    ]
   },
   {
     "id": "crimson-horizon",
@@ -17,11 +21,15 @@
     "source": "Kaito’s Gallery",
     "size": "2 × 2 maps",
     "price": "36 diamonds",
-    "category": "Landscapes",
     "status": "Available",
     "description": "A warm sunset layered over distant mountain silhouettes.",
     "featured": true,
-    "image": "assets/images/crimson-horizon.png"
+    "image": "assets/images/crimson-horizon.png",
+    "tags": [
+      "Landscapes",
+      "Nature",
+      "Sunset"
+    ]
   },
   {
     "id": "fox-spirit-shrine",
@@ -29,11 +37,15 @@
     "source": "Whispering Woods",
     "size": "1 × 2 maps",
     "price": "24 diamonds",
-    "category": "Fantasy",
     "status": "Made to order",
     "description": "A small shrine framed by deep green forest and a fox guardian.",
     "featured": false,
-    "image": "assets/images/fox-spirit-shrine.png"
+    "image": "assets/images/fox-spirit-shrine.png",
+    "tags": [
+      "Fantasy",
+      "Japanese",
+      "Architecture"
+    ]
   },
   {
     "id": "koi-in-still-water",
@@ -41,10 +53,14 @@
     "source": "The Lantern District",
     "size": "2 × 2 maps",
     "price": "32 diamonds",
-    "category": "Nature",
     "status": "Available",
     "description": "Two bright koi drift through a cool, patterned pond.",
     "featured": false,
-    "image": "assets/images/koi-in-still-water.png"
+    "image": "assets/images/koi-in-still-water.png",
+    "tags": [
+      "Nature",
+      "Japanese",
+      "Animals"
+    ]
   }
 ]

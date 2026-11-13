@@ -18,7 +18,7 @@ Images are stored as normal files in the repository. There are no image URLs, ex
 1. Open the `assets/images/` folder in your GitHub repository.
 2. Choose **Add file → Upload files** and upload your image (PNG, JPG, WEBP, or GIF).
 3. Copy the image's repository path, for example `assets/images/my-new-mapart.png`.
-4. Open `data/maparts.json` and add a new object to the array. Include the title, source, size, price, category, image path, and a unique ID. Example:
+4. Open `data/maparts.json` and add a new object to the array. Include the title, source, size, price, tags, image path, and a unique ID. Example:
 
 ```json
 {
@@ -27,7 +27,7 @@ Images are stored as normal files in the repository. There are no image URLs, ex
   "source": "Frihavn Workshop",
   "size": "2 × 2 maps",
   "price": "48 diamonds",
-  "category": "Fantasy",
+  "tags": ["Fantasy", "Japanese", "Landscapes"],
   "image": "assets/images/moon-garden.png",
   "featured": false
 }
@@ -35,7 +35,7 @@ Images are stored as normal files in the repository. There are no image URLs, ex
 
 5. Commit the image and JSON changes. GitHub Pages will publish the update automatically after the commit deploys.
 
-To replace an artwork image, upload the new file to `assets/images/` and update that entry's `image` value in `data/maparts.json`. To remove an artwork, delete its object from the JSON file (and optionally delete its image file from the repository).
+The catalogue filter chips are generated automatically from every entry’s `tags` array. Add, rename, or remove tags in the JSON and the filter list updates on the next GitHub Pages deployment. A piece can have more than one tag. To replace an artwork image, upload the new file to `assets/images/` and update that entry's `image` value in `data/maparts.json`. To remove an artwork, delete its object from the JSON file (and optionally delete its image file from the repository).
 
 **Important:** The website itself does not contain an editor or collection manager. GitHub Pages is static, so catalogue changes are made directly in the repository and published by a commit.
 
